@@ -1,21 +1,24 @@
 // components/SearchBar.tsx
-import { IonSearchbar, IonList, IonItem, IonAvatar, IonLabel } from '@ionic/react';
+import { IonSearchbar, IonAvatar } from '@ionic/react';
 import { useState, useEffect } from 'react';
+import './SearchBar.css';
 
 const SearchBar: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [userData, setUserData] = useState<any>(null);
 
-  // Fetch GitHub user data when searchText changes
   useEffect(() => {
-    if (!searchText) return;
+    if (!searchText.trim()) {
+      setUserData(null);
+      return;
+    }
 
     const timer = setTimeout(() => {
       fetch(`https://api.github.com/users/${searchText}`)
         .then(res => res.json())
         .then(data => setUserData(data))
-        .catch(err => console.log(err));
-    }, 500); // 500ms debounce
+        .catch(err => console.error(err));
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchText]);
@@ -28,25 +31,30 @@ const SearchBar: React.FC = () => {
         value={searchText}
         onIonInput={e => setSearchText(e.detail.value!)}
       />
-      
-      <IonList>
-        {userData && !userData.message && (
-          <IonItem button onClick={() => window.open(userData.html_url, '_blank')}>
-            <IonAvatar slot="start">
-              <img src={userData.avatar_url} alt="Avatar" />
+
+      {userData && !userData.message && (
+        <div className="card-container">
+          <div 
+            className="profile-card" 
+            onClick={() => window.open(userData.html_url, '_blank')}
+          >
+            <IonAvatar className="card-avatar">
+              <img src={userData.avatar_url} alt="GitHub Avatar" />
             </IonAvatar>
-            <IonLabel>
-              <h2>{userData.login}</h2>
-              <p>{userData.name || 'No full name'}</p>
-            </IonLabel>
-          </IonItem>
-        )}
-        {userData && userData.message && (
-          <IonItem>
-            <IonLabel>User not found</IonLabel>
-          </IonItem>
-        )}
-      </IonList>
+            
+            <div className="card-info">
+              <h2 className="card-username">@{userData.login}</h2>
+              <p className="card-name">{userData.name || 'No full name'}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {userData && userData.message === "Not Found" && (
+        <div className="card-container">
+          <p style={{ color: 'var(--ion-color-medium)' }}>User not found</p>
+        </div>
+      )}
     </>
   );
 };
